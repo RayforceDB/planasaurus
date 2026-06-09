@@ -18,7 +18,10 @@ export function applyOutcome(state, action, outcome, ledger) {
       const phaseKey = action.mode === 'first' ? 'review1' : 'review2';
       const round = s.counters[`${phaseKey}Round`];
       const incoming = (outcome.findings || []).map((f) => ({ ...f, phase: phaseKey, round }));
-      s[`${phaseKey}LastNew`] = countNew(ledger, incoming).length;
+      // Convergence counts only NEW CONFIRMED findings. A round that surfaces
+      // only false positives (or re-worded dupes) registers 0 new and converges,
+      // instead of thrashing the review loop up to the iteration cap.
+      s[`${phaseKey}LastNew`] = countNew(ledger, incoming.filter((f) => f.confirmed)).length;
       s.counters[`${phaseKey}Round`]++;
       append = incoming;
       break;

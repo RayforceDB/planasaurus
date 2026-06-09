@@ -93,8 +93,10 @@ on a real repo.
 
 ### Known limitations
 
-- Review convergence dedupes findings by `file:line:issue`; if review agents reword the
-  same finding across rounds it can loop up to the iteration cap before converging.
+- Review convergence counts only *new confirmed* findings, so rounds that surface only
+  false positives converge immediately. A round that finds a genuinely new confirmed issue
+  still triggers another round (by design); reworded *confirmed* dupes are deduped by
+  `file:line:issue`.
 - No remote git operations — you commit/push the resulting branch yourself.
 
 ## License

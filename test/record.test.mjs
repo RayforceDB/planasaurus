@@ -36,9 +36,21 @@ test('first review records new-finding count and increments round', () => {
 test('review dedupes against existing ledger for LastNew', () => {
   const action = { action: 'review', mode: 'first' };
   const ledger = [{ file: 'a.js', line: 1, issue: 'bug' }];
-  const outcome = { findings: [{ file: 'a.js', line: 1, issue: 'bug' }] }; // already seen
+  const outcome = { findings: [{ file: 'a.js', line: 1, issue: 'bug', confirmed: true }] }; // already seen
   const { state } = applyOutcome(freshState(), action, outcome, ledger);
   assert.equal(state.review1LastNew, 0);
+});
+
+test('review round of only false positives converges (LastNew = 0)', () => {
+  const action = { action: 'review', mode: 'first' };
+  // Two findings the verifier dismissed as false positives — must NOT keep the loop alive.
+  const outcome = { findings: [
+    { file: 'a.js', line: 1, issue: 'missing README', confirmed: false },
+    { file: 'b.js', line: 9, issue: 'style nit', confirmed: false },
+  ] };
+  const { state, append } = applyOutcome(freshState(), action, outcome, []);
+  assert.equal(state.review1LastNew, 0); // converges
+  assert.equal(append.length, 2);        // but both are still recorded in the ledger
 });
 
 test('codex fixed sets pendingCodexFixes and increments iter', () => {
