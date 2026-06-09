@@ -73,7 +73,23 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
   Include ALL findings (confirmed and not) — the binary dedupes them to decide convergence.
 
 ### codex  → `{dismissalContext}`
-TODO(Task 5): run external review (codex or adversarial-Claude fallback), verify, fix, record.
+- Read `${CLAUDE_PLUGIN_ROOT}/agents/external-review.md`. Substitute `{BASE}` (from state.json) and
+  `{DISMISSAL}` (= `action.dismissalContext`).
+- Choose the reviewer:
+  - If `codex:rescue` (or `codex:codex-rescue`) appears in the available skills/agents list, spawn it
+    as a BACKGROUND Agent (`subagent_type: "codex:codex-rescue"`, `run_in_background: true`) using
+    prompt A. The user keeps interactivity; you are notified on completion.
+  - Otherwise, spawn an adversarial Claude Agent (foreground) using prompt B. Set `model` to a
+    different tier than the implementer used (e.g. opus if tasks ran on sonnet) for perspective diversity.
+- When the reviewer completes, collect its `FINDINGS:` JSON.
+- VERIFY each finding (read the code, ~20 lines context). Classify confirmed / false positive.
+- FIX confirmed findings. Run tests + lint (must pass; retry once on failure). Do NOT commit here —
+  fixes accumulate; the binary will emit a `commit` action when the codex phase ends.
+- Record false-positive reasons into the dismissal context you return.
+- OUTCOME:
+  `{"result": "<r>", "findings": [{"file","line","issue","confirmed":bool,"fixed":bool}], "dismissalContext": "<reasons>"}`
+  where `<r>` = `clean` (no findings), `fixed` (confirmed issues fixed), `dismissed` (all false positives),
+  or `failed` (confirmed issues could not be fixed / tests won't pass).
 
 ### commit  → `{message}`
 - Run `git commit -am "{message}"`. If there is nothing to commit, that is fine — proceed.
