@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>planasaurus — autonomous plan execution for Claude Code</title>
+<meta name="description" content="An autonomous plan-execution pipeline for Claude Code. A deterministic state-machine binary drives the loop; subagents do the judgment. It never leaves your session." />
+<meta property="og:title" content="planasaurus" />
+<meta property="og:description" content="Autonomous plan execution for Claude Code that never leaves your session." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://planasaurus.rayforcedb.com" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦕</text></svg>" />
+<style>
+  :root {
+    --bg: #0b0f0d;
+    --bg-soft: #111714;
+    --card: #141b18;
+    --line: #1f2a24;
+    --ink: #e7efe9;
+    --muted: #8ba096;
+    --accent: #54e08c;
+    --accent-2: #36c8c0;
+    --code: #0d120f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre, .mono { font-family: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, Menlo, monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  .glow {
+    position: fixed; inset: -30% 0 auto 0; height: 600px; z-index: -1;
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(84,224,140,.18), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* nav */
+  nav { border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(11,15,13,.72); backdrop-filter: blur(10px); z-index: 10; }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { font-weight: 700; font-size: 18px; letter-spacing: -.02em; display: flex; gap: 9px; align-items: center; }
+  .brand span.logo { font-size: 22px; }
+  .nav-links { display: flex; gap: 22px; align-items: center; font-size: 14px; color: var(--muted); }
+  .nav-links a { color: var(--muted); }
+  .nav-links a:hover { color: var(--ink); text-decoration: none; }
+  .btn {
+    display: inline-block; background: var(--accent); color: #04130a; font-weight: 650;
+    padding: 9px 16px; border-radius: 9px; font-size: 14px; transition: transform .12s ease, box-shadow .12s ease;
+    box-shadow: 0 0 0 1px rgba(84,224,140,.4), 0 8px 24px rgba(84,224,140,.15);
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(84,224,140,.6), 0 10px 30px rgba(84,224,140,.25); }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .btn.ghost:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+
+  /* hero */
+  header { padding: 92px 0 72px; text-align: center; }
+  .tag { display: inline-block; font-size: 13px; color: var(--accent-2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; margin-bottom: 26px; background: var(--bg-soft); }
+  h1 { font-size: clamp(40px, 7vw, 68px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800; }
+  h1 .grad { background: linear-gradient(100deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { color: var(--muted); font-size: clamp(17px, 2.4vw, 21px); max-width: 660px; margin: 22px auto 0; }
+  .cta { display: flex; gap: 14px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
+  .install { margin: 40px auto 0; max-width: 640px; text-align: left; }
+  .install .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+  pre.cmd {
+    background: var(--code); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+    font-size: 13.5px; overflow-x: auto; color: #cfe9d8;
+  }
+  pre.cmd .c { color: #5b7066; }
+  pre.cmd .p { color: var(--accent); }
+
+  /* sections */
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  .eyebrow { color: var(--accent-2); font-size: 13px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+  h2 { font-size: clamp(26px, 4vw, 36px); letter-spacing: -.03em; margin: 10px 0 8px; font-weight: 750; }
+  .sub { color: var(--muted); max-width: 620px; }
+
+  /* pipeline */
+  .pipe { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px; align-items: stretch; }
+  .step {
+    flex: 1 1 120px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 14px; position: relative; min-width: 120px;
+  }
+  .step .n { font-size: 11px; color: var(--accent-2); font-weight: 700; }
+  .step .t { font-weight: 650; margin-top: 4px; font-size: 15px; }
+  .step .d { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
+  .arrow { color: var(--line); align-self: center; font-size: 20px; }
+
+  /* feature grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 36px; }
+  .feat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .feat .ic { font-size: 22px; }
+  .feat h3 { font-size: 16.5px; margin: 12px 0 7px; letter-spacing: -.01em; }
+  .feat p { color: var(--muted); font-size: 14px; }
+  .feat .k { color: var(--accent); }
+
+  /* usage */
+  .steps { counter-reset: s; margin-top: 30px; display: grid; gap: 14px; }
+  .ustep { display: flex; gap: 16px; align-items: flex-start; }
+  .ustep .num { counter-increment: s; flex: 0 0 32px; height: 32px; border-radius: 8px; background: var(--bg-soft); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 700; color: var(--accent); font-size: 14px; }
+  .ustep .num::before { content: counter(s); }
+  .ustep .body { flex: 1; }
+  .ustep .body b { font-weight: 650; }
+  .ustep .body p { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .ustep code { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; font-size: 13px; color: #cfe9d8; }
+
+  footer { border-top: 1px solid var(--line); padding: 40px 0 60px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+
+  .note { color: var(--muted); font-size: 13px; margin-top: 14px; }
+  @media (max-width: 600px) { .arrow { display: none; } header { padding: 60px 0 48px; } }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="logo">🦕</span> planasaurus</div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#why">Why</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/RayforceDB/planasaurus">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap">
+    <span class="tag">for Claude Code</span>
+    <h1>Autonomous plan execution<br />that <span class="grad">never leaves your session</span>.</h1>
+    <p class="lead">planasaurus runs your implementation plan end-to-end — implement, review, fix, repeat — with a deterministic state machine steering and subagents doing the judgment. No external runner. No per-call billing.</p>
+    <div class="cta">
+      <a class="btn" href="#install">Install</a>
+      <a class="btn ghost" href="https://github.com/RayforceDB/planasaurus">View on GitHub</a>
+    </div>
+    <div class="install">
+      <div class="label">Drop a plan in, walk away</div>
+      <pre class="cmd"><span class="p">/planasaurus:run</span> docs/plans/your-plan.md</pre>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2>A compiled brain. Subagent hands.</h2>
+    <p class="sub">The control flow — loops, counters, convergence, when to stop — lives in a tiny deterministic binary. Claude only does what it's good at: writing code, reviewing it, fixing it. Tokens are never spent deciding what to do next.</p>
+    <div class="pipe">
+      <div class="step"><div class="n">01</div><div class="t">Branch</div><div class="d">Isolate the work on a feature branch.</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">02</div><div class="t">Task loop</div><div class="d">One task per iteration, tests &amp; commit.</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">03</div><div class="t">Review</div><div class="d">5 parallel lenses, verify &amp; fix.</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">04</div><div class="t">External</div><div class="d">Codex or adversarial second opinion.</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">05</div><div class="t">Finalize</div><div class="d">Re-review, archive the plan.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <div class="eyebrow">Why it's different</div>
+    <h2>Determinism where it matters.</h2>
+    <div class="grid">
+      <div class="feat">
+        <div class="ic">🧠</div>
+        <h3>Zero tokens on control flow</h3>
+        <p>A compiled state machine decides every step. The model obeys one instruction at a time — it can't lose count across 15 review rounds.</p>
+      </div>
+      <div class="feat">
+        <div class="ic">💸</div>
+        <h3>One session, flat rate</h3>
+        <p>No <span class="k">claude -p</span> fan-out, no spawned processes. Everything runs as in-session subagents under your existing plan.</p>
+      </div>
+      <div class="feat">
+        <div class="ic">♻️</div>
+        <h3>Crash-resumable</h3>
+        <p>All state lives on disk in <span class="k">.planasaurus/</span>. Crash, compaction, closed laptop — re-run the command and it picks up exactly where it stopped.</p>
+      </div>
+      <div class="feat">
+        <div class="ic">🔍</div>
+        <h3>Never zero external review</h3>
+        <p>Uses the <span class="k">codex</span> plugin if present, otherwise an adversarial Claude on a different model tier. There is always a second opinion.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="eyebrow">Install</div>
+    <h2>Two commands in Claude Code.</h2>
+    <p class="sub">Add the marketplace, then install the plugin.</p>
+    <pre class="cmd" style="margin-top:24px"><span class="c"># add the Rayforce marketplace</span>
+/plugin marketplace add RayforceDB/planasaurus
+
+<span class="c"># install the plugin</span>
+/plugin install planasaurus@rayforce</pre>
+
+    <div class="steps">
+      <div class="ustep"><div class="num"></div><div class="body"><b>Write a plan</b><p>Use Claude Code's brainstorming + plan-writing flow to produce a plan file with <code>[ ]</code> task checkboxes.</p></div></div>
+      <div class="ustep"><div class="num"></div><div class="body"><b>Run it</b><p><code>/planasaurus:run docs/plans/your-plan.md</code> — optionally <code>--skip-codex</code> or <code>--max-iterations=N</code>.</p></div></div>
+      <div class="ustep"><div class="num"></div><div class="body"><b>Walk away</b><p>It implements each task, runs multi-agent review, takes an external second opinion, fixes what's real, and archives the plan when done.</p></div></div>
+    </div>
+    <p class="note">Requires a git repository. The codex external-review step is optional — without the codex plugin it falls back to an adversarial Claude reviewer.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>🦕 planasaurus — by <a href="https://github.com/RayforceDB">Rayforce</a></div>
+    <div><a href="https://github.com/RayforceDB/planasaurus">GitHub</a> · <a href="https://github.com/RayforceDB/planasaurus/blob/main/LICENSE">MIT</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

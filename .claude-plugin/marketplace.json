@@ -1,0 +1,15 @@
+{
+  "name": "rayforce",
+  "owner": { "name": "Rayforce", "url": "https://github.com/RayforceDB" },
+  "metadata": {
+    "description": "Rayforce Claude Code plugins.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "planasaurus",
+      "source": "./",
+      "description": "Autonomous plan-execution pipeline (task loop, multi-agent review, external review) driven by a deterministic state-machine binary. Stays in one session."
+    }
+  ]
+}
