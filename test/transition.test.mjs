@@ -59,7 +59,9 @@ test('codex passes accumulated dismissal context', () => {
 
 test('skipCodex jumps from codex straight to review2', () => {
   const s = freshState({ branchCreated: true, phase: 'codex', config: { maxIterations: 50, skipCodex: true } });
-  assert.throws(() => computeNext(s, NO_TASKS, []), /review2/);
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'review');
+  assert.equal(action.mode, 'second');
 });
 
 test('codex done with pending fixes emits a commit action', () => {
@@ -71,5 +73,26 @@ test('codex done with pending fixes emits a commit action', () => {
 
 test('codex done without pending fixes advances to review2', () => {
   const s = freshState({ branchCreated: true, phase: 'codex', codexDone: true, pendingCodexFixes: false });
-  assert.throws(() => computeNext(s, NO_TASKS, []), /review2/);
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'review');
+  assert.equal(action.mode, 'second');
+});
+
+test('review2 clean advances to finalize action', () => {
+  const s = freshState({ branchCreated: true, phase: 'review2', review2LastNew: 0, counters: { taskIter: 0, review1Round: 0, codexIter: 0, review2Round: 1 } });
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'finalize');
+  assert.equal(action.plan, 'plan.md');
+});
+
+test('finalized state reports done with a summary', () => {
+  const s = freshState({ branchCreated: true, phase: 'finalize', finalized: true, codexDone: true });
+  const ledger = [
+    { phase: 'review1', confirmed: true, fixed: true },
+    { phase: 'codex', confirmed: true, fixed: false },
+  ];
+  const { action } = computeNext(s, NO_TASKS, ledger);
+  assert.equal(action.action, 'done');
+  assert.equal(action.summary.findingsConfirmed, 2);
+  assert.equal(action.summary.findingsFixed, 1);
 });

@@ -39,11 +39,36 @@ function codexHandler(s) {
   return { next: 'review2' };
 }
 
+function finalizeHandler(s) {
+  if (!s.finalized) return { action: { action: 'finalize', plan: s.plan } };
+  return { next: 'done' };
+}
+
+function buildSummary(s, ledger) {
+  const confirmed = ledger.filter((f) => f.confirmed).length;
+  const fixed = ledger.filter((f) => f.fixed).length;
+  return {
+    tasks: s.counters.taskIter,
+    review1Rounds: s.counters.review1Round,
+    codexIters: s.counters.codexIter,
+    review2Rounds: s.counters.review2Round,
+    findingsConfirmed: confirmed,
+    findingsFixed: fixed,
+  };
+}
+
+function doneHandler(s, plan, ledger) {
+  return { action: { action: 'done', summary: buildSummary(s, ledger) } };
+}
+
 const HANDLERS = {
   branch: branchHandler,
   task: taskHandler,
   review1: reviewHandler('review1', 'first', 'codex'),
   codex: codexHandler,
+  review2: reviewHandler('review2', 'second', 'finalize'),
+  finalize: finalizeHandler,
+  done: doneHandler,
 };
 
 export function computeNext(state, plan, ledger) {
