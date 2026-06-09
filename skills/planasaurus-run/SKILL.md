@@ -45,7 +45,12 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
 - OUTCOME: `{}`
 
 ### task  → `{plan}`
-TODO(Task 3): spawn the task implementer subagent and record its STATUS.
+- Spawn ONE foreground Agent (general-purpose). Its prompt is the contents of
+  `${CLAUDE_PLUGIN_ROOT}/agents/task.md` with `{PLAN}` replaced by `action.plan`.
+- The agent implements one task, writes tests, marks checkboxes `[x]`, and commits.
+- Parse the last `STATUS:` line from the agent's reply. If no STATUS line is present,
+  re-read the plan: if the task's boxes are now `[x]`, treat as `task_done`; else `failed`.
+- OUTCOME: `{"result": "task_done"|"all_done"|"failed"}`
 
 ### review  → `{mode}`
 TODO(Task 4): spawn the review fan-out, verify findings, fix, record.
