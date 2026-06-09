@@ -1,0 +1,6 @@
+{
+  "name": "planasaurus",
+  "description": "Autonomous plan-execution pipeline (task loop, multi-agent review, external review) driven by a deterministic state-machine binary.",
+  "version": "0.1.0",
+  "author": { "name": "Rayforce" }
+}
