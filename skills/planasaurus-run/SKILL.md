@@ -46,7 +46,7 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
 
 ### task  → `{plan}`
 - Spawn ONE foreground Agent (general-purpose). Its prompt is the contents of
-  `${CLAUDE_PLUGIN_ROOT}/agents/task.md` with `{PLAN}` replaced by `action.plan`.
+  `${CLAUDE_PLUGIN_ROOT}/prompts/task.md` with `{PLAN}` replaced by `action.plan`.
 - The agent implements one task, writes tests, marks checkboxes `[x]`, and commits.
 - Parse the last `STATUS:` line from the agent's reply. If no STATUS line is present,
   re-read the plan: if the task's boxes are now `[x]`, treat as `task_done`; else `failed`.
@@ -59,7 +59,7 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
   - `mode == "second"` → quality, implementation only; append to each prompt:
     "Report ONLY critical and major issues; ignore minor/style."
 - Spawn ALL selected lenses as foreground Agents **in a single message** (parallel). Each agent's
-  prompt is the contents of `${CLAUDE_PLUGIN_ROOT}/agents/review-<lens>.md` with `{BASE}` replaced
+  prompt is the contents of `${CLAUDE_PLUGIN_ROOT}/prompts/review-<lens>.md` with `{BASE}` replaced
   by the base branch. If an agent fails/times out, log it and proceed with the others.
 - Collect every agent's `FINDINGS:` JSON. Merge into one list.
 - VERIFY each finding yourself: read the code at file:line with ~20 lines of context. Mark
@@ -73,7 +73,7 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
   Include ALL findings (confirmed and not) — the binary dedupes them to decide convergence.
 
 ### codex  → `{dismissalContext}`
-- Read `${CLAUDE_PLUGIN_ROOT}/agents/external-review.md`. Substitute `{BASE}` (from state.json) and
+- Read `${CLAUDE_PLUGIN_ROOT}/prompts/external-review.md`. Substitute `{BASE}` (from state.json) and
   `{DISMISSAL}` (= `action.dismissalContext`).
 - Choose the reviewer:
   - If `codex:rescue` (or `codex:codex-rescue`) appears in the available skills/agents list, spawn it
