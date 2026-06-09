@@ -33,7 +33,9 @@ function codexHandler(s) {
     return { action: { action: 'codex', dismissalContext: s.dismissalContext.join('\n') } };
   }
   if (s.pendingCodexFixes) {
-    s.pendingCodexFixes = false; // emit the commit exactly once
+    // Keep emitting commit until the dispatcher records it (record(commit)
+    // clears the flag). next stays a pure read, so a crash before the commit
+    // lands safely re-emits it instead of silently dropping the fixes.
     return { action: { action: 'commit', message: 'fix: address codex review findings' } };
   }
   return { next: 'review2' };

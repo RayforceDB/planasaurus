@@ -1,0 +1,5 @@
+# planasaurus runtime scratch dir (state machine state + findings ledger)
+.planasaurus/
+
+# node
+node_modules/

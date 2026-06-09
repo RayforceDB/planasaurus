@@ -13,6 +13,11 @@ test('branch outcome marks branchCreated', () => {
   assert.equal(state.branchCreated, true);
 });
 
+test('commit outcome clears pendingCodexFixes (so next stops re-emitting it)', () => {
+  const { state } = applyOutcome(freshState({ pendingCodexFixes: true }), { action: 'commit' }, {}, []);
+  assert.equal(state.pendingCodexFixes, false);
+});
+
 test('task outcome increments taskIter', () => {
   const { state } = applyOutcome(freshState(), { action: 'task' }, { result: 'task_done' }, []);
   assert.equal(state.counters.taskIter, 1);

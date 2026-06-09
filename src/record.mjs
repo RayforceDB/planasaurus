@@ -37,6 +37,7 @@ export function applyOutcome(state, action, outcome, ledger) {
     }
 
     case 'commit':
+      s.pendingCodexFixes = false; // the commit landed; stop re-emitting it
       break;
 
     case 'finalize':
