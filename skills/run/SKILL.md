@@ -1,5 +1,5 @@
 ---
-name: planasaurus-run
+name: run
 description: "Use when running the planasaurus autonomous pipeline on a plan file — drives task implementation, multi-agent review, and external review to completion. Requires a plan .md path."
 argument-hint: "path/to/plan.md [--skip-codex] [--max-iterations=N]"
 ---

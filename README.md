@@ -8,7 +8,7 @@ stays in one session.
 
 `brainstorming` + `writing-plans` produce a plan file with `[ ]` task checkboxes. Then:
 
-    /planasaurus:planasaurus-run docs/plans/your-plan.md
+    /planasaurus:run docs/plans/your-plan.md
 
 The dispatcher skill loops: it asks the binary (`bin/planasaurus.mjs`) what to do next,
 runs that action (create branch, implement one task, multi-agent review, external review,
