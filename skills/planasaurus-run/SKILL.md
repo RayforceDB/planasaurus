@@ -53,7 +53,24 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
 - OUTCOME: `{"result": "task_done"|"all_done"|"failed"}`
 
 ### review  → `{mode}`
-TODO(Task 4): spawn the review fan-out, verify findings, fix, record.
+- Determine the base branch from `.planasaurus/state.json` (`baseBranch` field).
+- Select lenses:
+  - `mode == "first"` → all five: quality, implementation, testing, simplification, documentation.
+  - `mode == "second"` → quality, implementation only; append to each prompt:
+    "Report ONLY critical and major issues; ignore minor/style."
+- Spawn ALL selected lenses as foreground Agents **in a single message** (parallel). Each agent's
+  prompt is the contents of `${CLAUDE_PLUGIN_ROOT}/agents/review-<lens>.md` with `{BASE}` replaced
+  by the base branch. If an agent fails/times out, log it and proceed with the others.
+- Collect every agent's `FINDINGS:` JSON. Merge into one list.
+- VERIFY each finding yourself: read the code at file:line with ~20 lines of context. Mark
+  `confirmed: true` only if it is a real problem; otherwise `confirmed: false` (false positive).
+- FIX every confirmed finding. Then run the project's tests and lint. All tests must pass.
+  - If tests pass and at least one fix was made: `git commit -am "fix: address review findings"`,
+    mark those findings `fixed: true`.
+  - If tests fail after a fix attempt, retry once; if still failing, do NOT commit — leave
+    `fixed: false` for the unfixed ones.
+- OUTCOME: `{"findings": [{"file","line","issue","confirmed":bool,"fixed":bool}, ...]}`
+  Include ALL findings (confirmed and not) — the binary dedupes them to decide convergence.
 
 ### codex  → `{dismissalContext}`
 TODO(Task 5): run external review (codex or adversarial-Claude fallback), verify, fix, record.
