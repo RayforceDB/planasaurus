@@ -27,10 +27,23 @@ function reviewHandler(phaseKey, mode, nextPhase) {
   };
 }
 
+function codexHandler(s) {
+  if (s.config.skipCodex) return { next: 'review2' };
+  if (!s.codexDone) {
+    return { action: { action: 'codex', dismissalContext: s.dismissalContext.join('\n') } };
+  }
+  if (s.pendingCodexFixes) {
+    s.pendingCodexFixes = false; // emit the commit exactly once
+    return { action: { action: 'commit', message: 'fix: address codex review findings' } };
+  }
+  return { next: 'review2' };
+}
+
 const HANDLERS = {
   branch: branchHandler,
   task: taskHandler,
   review1: reviewHandler('review1', 'first', 'codex'),
+  codex: codexHandler,
 };
 
 export function computeNext(state, plan, ledger) {

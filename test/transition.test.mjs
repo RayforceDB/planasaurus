@@ -43,7 +43,33 @@ test('review1 keeps looping while last round found new issues', () => {
   assert.equal(action.action, 'review');
 });
 
-test('review1 advances to codex when last round was clean', () => {
+test('review1 clean advances into codex action', () => {
   const s = freshState({ branchCreated: true, phase: 'review1', review1LastNew: 0, counters: { taskIter: 0, review1Round: 1, codexIter: 0, review2Round: 0 } });
-  assert.throws(() => computeNext(s, NO_TASKS, []), /codex/);
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'codex');
+  assert.equal(action.dismissalContext, '');
+});
+
+test('codex passes accumulated dismissal context', () => {
+  const s = freshState({ branchCreated: true, phase: 'codex', dismissalContext: ['handled by mw', 'covered by integ test'] });
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'codex');
+  assert.match(action.dismissalContext, /handled by mw/);
+});
+
+test('skipCodex jumps from codex straight to review2', () => {
+  const s = freshState({ branchCreated: true, phase: 'codex', config: { maxIterations: 50, skipCodex: true } });
+  assert.throws(() => computeNext(s, NO_TASKS, []), /review2/);
+});
+
+test('codex done with pending fixes emits a commit action', () => {
+  const s = freshState({ branchCreated: true, phase: 'codex', codexDone: true, pendingCodexFixes: true });
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'commit');
+  assert.match(action.message, /codex/i);
+});
+
+test('codex done without pending fixes advances to review2', () => {
+  const s = freshState({ branchCreated: true, phase: 'codex', codexDone: true, pendingCodexFixes: false });
+  assert.throws(() => computeNext(s, NO_TASKS, []), /review2/);
 });
