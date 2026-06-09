@@ -23,7 +23,27 @@ test('after branch created, unchecked tasks emit task action', () => {
   assert.equal(action.plan, 'plan.md');
 });
 
-test('task phase advances past task at max iterations', () => {
+test('task at max iterations advances into review1', () => {
   const s = freshState({ branchCreated: true, counters: { taskIter: 50, review1Round: 0, codexIter: 0, review2Round: 0 } });
-  assert.throws(() => computeNext(s, HAS_TASKS, []), /review1/);
+  const { action } = computeNext(s, HAS_TASKS, []);
+  assert.equal(action.action, 'review');
+  assert.equal(action.mode, 'first');
+});
+
+test('review1 runs round 0 when no rounds have happened', () => {
+  const s = freshState({ branchCreated: true, phase: 'review1' });
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'review');
+  assert.equal(action.mode, 'first');
+});
+
+test('review1 keeps looping while last round found new issues', () => {
+  const s = freshState({ branchCreated: true, phase: 'review1', review1LastNew: 3, counters: { taskIter: 0, review1Round: 1, codexIter: 0, review2Round: 0 } });
+  const { action } = computeNext(s, NO_TASKS, []);
+  assert.equal(action.action, 'review');
+});
+
+test('review1 advances to codex when last round was clean', () => {
+  const s = freshState({ branchCreated: true, phase: 'review1', review1LastNew: 0, counters: { taskIter: 0, review1Round: 1, codexIter: 0, review2Round: 0 } });
+  assert.throws(() => computeNext(s, NO_TASKS, []), /codex/);
 });

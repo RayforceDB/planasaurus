@@ -16,9 +16,21 @@ function taskHandler(s, plan) {
   return { next: 'review1' };
 }
 
+function reviewHandler(phaseKey, mode, nextPhase) {
+  return (s) => {
+    const lastNew = s[`${phaseKey}LastNew`];
+    const round = s.counters[`${phaseKey}Round`];
+    const firstRun = lastNew === null || lastNew === undefined;
+    const keepGoing = firstRun || (lastNew > 0 && round < capOf(s));
+    if (keepGoing) return { action: { action: 'review', mode } };
+    return { next: nextPhase };
+  };
+}
+
 const HANDLERS = {
   branch: branchHandler,
   task: taskHandler,
+  review1: reviewHandler('review1', 'first', 'codex'),
 };
 
 export function computeNext(state, plan, ledger) {
