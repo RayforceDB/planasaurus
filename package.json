@@ -1,0 +1,9 @@
+{
+  "name": "planasaurus",
+  "version": "0.1.0",
+  "description": "Deterministic state machine that drives a plan-execution loop for Claude Code.",
+  "type": "module",
+  "bin": { "planasaurus": "bin/planasaurus.mjs" },
+  "scripts": { "test": "node --test" },
+  "license": "MIT"
+}
