@@ -42,7 +42,11 @@ function cmdInit(args) {
 
 function cmdNext() {
   const state = readState(ROOT);
-  const plan = analyzePlan(readPlan(state.plan));
+  // The plan may be gone once we are past the task phase (finalize moves it to
+  // docs/plans/completed/). A missing plan just means "no tasks" — never fatal.
+  let planText = '';
+  try { planText = readPlan(state.plan); } catch { /* plan moved or removed */ }
+  const plan = analyzePlan(planText);
   const ledger = readLedger(ROOT);
   const { state: nextState, action } = computeNext(state, plan, ledger);
   writeState(ROOT, nextState);

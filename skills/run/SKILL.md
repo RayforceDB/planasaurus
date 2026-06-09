@@ -29,10 +29,13 @@ continuously. The only reasons to stop early are an unrecoverable git error or `
 
 1. Run `$BIN next`. Parse the single-line JSON action from stdout.
 2. Dispatch on `action.action` using the handlers below. Each handler produces an OUTCOME object.
-3. Record the result. Write the action and outcome to a temp file and pipe it, to avoid quoting issues:
+3. Record the result. Findings text routinely contains apostrophes, quotes, and newlines, so
+   do NOT build the JSON inline in a shell string. Instead use the **Write tool** to write the
+   payload to `.planasaurus/outcome.json`, then feed it to `record` via stdin redirection:
    ```bash
-   printf '%s' '{"action": <the action object verbatim>, "outcome": <outcome>}' | $BIN record
+   $BIN record < .planasaurus/outcome.json
    ```
+   The payload is exactly: `{"action": <the action object verbatim, as emitted by next>, "outcome": <outcome>}`.
 4. Go to step 1.
 
 ## Action Handlers
